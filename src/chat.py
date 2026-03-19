@@ -5,27 +5,25 @@ from pathlib import Path
 
 load_dotenv()
 
-def get_ai_response(conversation_history: list) -> str:
-    """
-    Get response from OpenAI using conversation history
-    """
-
+def get_ai_response_stream(conversation_history:list) -> str:
     try:
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-        if not os.getenv("OPENAI_API_KEY"):
-            return "ERROR: API key not found. Check your .env file."
-
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o-mini", 
             messages=conversation_history,
-            temperature=0.7
-        )
-
-        return response.choices[0].message.content
-
+            temperature=0.7,
+            stream = True
+        )        
+        full_response = ""
+        for chunk in response:
+            if chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                print(content, end="", flush=True)
+                full_response+=content
+        print()
+        return full_response                                               
     except Exception as e:
-        return f"Error: {str(e)}"
+        print(f"Error:{str(e)}")
     
 def mock_chat_response(user_input: str, history: list) -> str:
     """
