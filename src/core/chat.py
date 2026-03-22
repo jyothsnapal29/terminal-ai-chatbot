@@ -8,7 +8,11 @@ load_dotenv()
 
 #Initalize OpenAI client
 api_key = os.getenv("OPENAI_API_KEY")
-client  = OpenAI(api_key=api_key) if api_key else None
+if api_key:
+    client = OpenAI(api_key=api_key)
+else:
+    client = None
+    print("OPENAI_API_KEY is not set. Chatbot will use mock responses.")
 
 def get_ai_response_stream(conversation_history:list) -> str:
     """
@@ -43,4 +47,5 @@ def get_ai_response_stream(conversation_history:list) -> str:
 
     except Exception as e:
         log_message(f"API Error on message: {last_user_msg}", str(e))
+        print("Chatbot: [Using mock response due to API error]\n")
         return f"[Mock] You said: '{last_user_msg}' | Total messages: {len(conversation_history)}"

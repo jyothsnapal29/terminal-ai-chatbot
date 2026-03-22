@@ -49,7 +49,7 @@ def main():
             print("\nChatbot: Goodbye!")
             break
         except Exception as e:
-            print(f"Error occurred: {str(e)}")
+            print(f"Chatbot: An error occurred. Using mock response if needed.")
 
 if __name__ == "__main__":
     main()

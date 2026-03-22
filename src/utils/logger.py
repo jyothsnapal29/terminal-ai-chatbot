@@ -22,6 +22,6 @@ def log_message(user_msg: str, ai_msg: str):
         "user": user_msg,
         "ai": ai_msg
     }
-    print(log_entry)
+    
     with open(filename, "a") as f:
         f.write(json.dumps(log_entry) + "\n")
