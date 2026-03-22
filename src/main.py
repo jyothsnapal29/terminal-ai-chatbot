@@ -1,52 +1,55 @@
-from chat import get_ai_response_stream, mock_chat_response
-from utils import log_message, ensure_logs_folder
-from prompts import SYSTEM_PROMPT
-from utils import token_tracking, track_cost
+from core.chat import get_ai_response_stream
+from core.prompts import SYSTEM_PROMPT
+from services.token_service import count_tokens
+from services.memory_service import trim_conversation_history
+from utils.logger import log_message,ensure_logs_folder
 
-USE_MOCK = False 
+MAX_HISTORY_MESSAGES = 10    
+MAX_TOKENS = 1500
 
 def main():
     ensure_logs_folder()
-    print("Welcome to AI Chatbot")
-    print(f"Commands: /exit, /clear, /history")
+    print("Welcome to AI Terminal Chatbot (Streaming Enabled)")
+    print("Type 'Exit' or 'Quit' to end the conversation")
+    print("Type '/clear' to reset conversation\n")
 
-    conversation_history = [
-        {"role":"system", "content": SYSTEM_PROMPT}
-    ]
+    conversation_history = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    while(True):
-        user_input = input("You:")
-        if user_input.lower() in ["exit", "quit", "/exit"]:
-            print("Chatbot: Goodbye!")
-            break
+    while True:
+        try:
+            user_input = input("You: ").strip()
 
-        if user_input.lower() == '/clear':
-            conversation_history = [{"role":"system", "content": SYSTEM_PROMPT}]
-            print("Chatbot memory cleared")
-            continue
+            if user_input.lower() in ["exit", "quit"]:
+                print("Chatbot: Goodbye!")
+                break
 
-        if user_input.lower() == '/history':
-            print("\n Last 5 messages")
-            for message in conversation_history[-5:]:
-                print(f"{message['role'].upper()}:{message['content']}")
-            print('----------------\n')
-            continue
+            if user_input.lower() == "/clear":
+                conversation_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+                print("Chatbot: Conversation history cleared.\n")
+                continue
 
-        conversation_history.append({"role":"user", "content":user_input})
-        # Switch between mock and real API
-        if USE_MOCK:
-            ai_response = mock_chat_response(user_input, conversation_history)
-        else:
+            conversation_history.append({"role": "user", "content": user_input})
+            conversation_history = trim_conversation_history(conversation_history, max_messages=MAX_HISTORY_MESSAGES)
+
+            # Count tokens
+            total_tokens = count_tokens(conversation_history)
+            if total_tokens > MAX_TOKENS:
+                print(f"Warning: Conversation tokens exceeded {MAX_TOKENS} ({total_tokens} tokens)")
+
+            print("Chatbot: ", end="", flush=True)
             ai_response = get_ai_response_stream(conversation_history)
-            
-        conversation_history.append({"role":"assistant", "content":ai_response})
-        input_text = " ".join(msg["content"] for msg in conversation_history)
-        input_tokens = token_tracking(input_text)
-        output_tokens = token_tracking(ai_response)
-        cost = track_cost(input_tokens, output_tokens)
-        print(f"\n Tokens → Input: {input_tokens} | Output: {output_tokens} | Total: {input_tokens + output_tokens}")
-        log_message(user_input, ai_response)
-        print(f"Chatbot:{ai_response}")
+            if ai_response.startswith("[Mock]"):
+                print(ai_response)
+            conversation_history.append({"role": "assistant", "content": ai_response})
 
-if __name__ == '__main__':
+            log_message(user_input, ai_response)
+            print()
+
+        except KeyboardInterrupt:
+            print("\nChatbot: Goodbye!")
+            break
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+
+if __name__ == "__main__":
     main()
