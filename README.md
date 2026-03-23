@@ -109,14 +109,27 @@ You: What is AI?
 Chatbot: AI (Artificial Intelligence) refers to systems that simulate human intelligence...
 
 You: /clear
+
 Chatbot: Conversation history cleared.
 
----
 
 ## Mock Mode Example (No API / Quota Exceeded)
 
 You: What is AI?
+
 Chatbot: [Mock] You said: 'What is AI?' | Total messages: 2
+
+
+## 🐳 Run with Docker
+
+### Build the image
+docker build -t terminal-ai-chatbot .
+
+### Run the container
+docker run -it --rm terminal-ai-chatbot
+
+### Run with environment variables
+docker run -it --rm --env-file .env terminal-ai-chatbot
 
 
 ---
